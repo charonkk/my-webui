@@ -805,36 +805,69 @@ def save_docs_to_vector_db(
                 return True
 
         log.info(f"adding to collection {collection_name}")
-        embedding_function = get_embedding_function(
-            request.app.state.config.RAG_EMBEDDING_ENGINE,
-            request.app.state.config.RAG_EMBEDDING_MODEL,
-            request.app.state.ef,
-            (
-                request.app.state.config.RAG_OPENAI_API_BASE_URL
-                if request.app.state.config.RAG_EMBEDDING_ENGINE == "openai"
-                else request.app.state.config.RAG_OLLAMA_BASE_URL
-            ),
-            (
-                request.app.state.config.RAG_OPENAI_API_KEY
-                if request.app.state.config.RAG_EMBEDDING_ENGINE == "openai"
-                else request.app.state.config.RAG_OLLAMA_API_KEY
-            ),
-            request.app.state.config.RAG_EMBEDDING_BATCH_SIZE,
-        )
+        # embedding_function = get_embedding_function(
+        #     request.app.state.config.RAG_EMBEDDING_ENGINE,
+        #     request.app.state.config.RAG_EMBEDDING_MODEL,
+        #     request.app.state.ef,
+        #     (
+        #         request.app.state.config.RAG_OPENAI_API_BASE_URL
+        #         if request.app.state.config.RAG_EMBEDDING_ENGINE == "openai"
+        #         else request.app.state.config.RAG_OLLAMA_BASE_URL
+        #     ),
+        #     (
+        #         request.app.state.config.RAG_OPENAI_API_KEY
+        #         if request.app.state.config.RAG_EMBEDDING_ENGINE == "openai"
+        #         else request.app.state.config.RAG_OLLAMA_API_KEY
+        #     ),
+        #     request.app.state.config.RAG_EMBEDDING_BATCH_SIZE,
+        # )
 
-        embeddings = embedding_function(
-            list(map(lambda x: x.replace("\n", " "), texts)), user=user
-        )
+        # embeddings = embedding_function(
+        #     list(map(lambda x: x.replace("\n", " "), texts)), user=user
+        # )
 
-        items = [
-            {
-                "id": str(uuid.uuid4()),
-                "text": text,
-                "vector": embeddings[idx],
-                "metadata": metadatas[idx],
-            }
-            for idx, text in enumerate(texts)
-        ]
+        VECTOR_DB = os.environ.get("VECTOR_DB")
+        log.info(f"my_log:[VECTOR_DB_retrieval]:{VECTOR_DB}")
+
+        if VECTOR_DB == "windvector":
+            items = [
+                {
+                    "id": str(uuid.uuid4()),
+                    "text": text,
+                    "vector": None,
+                    "metadata": metadatas[idx],
+                }
+                for idx, text in enumerate(texts)
+            ]
+        else:
+            embedding_function = get_embedding_function(
+                request.app.state.config.RAG_EMBEDDING_ENGINE,
+                request.app.state.config.RAG_EMBEDDING_MODEL,
+                request.app.state.ef,
+                (
+                    request.app.state.config.RAG_OPENAI_API_BASE_URL
+                    if request.app.state.config.RAG_EMBEDDING_ENGINE == "openai"
+                    else request.app.state.config.RAG_OLLAMA_BASE_URL
+                ),
+                (
+                    request.app.state.config.RAG_OPENAI_API_KEY
+                    if request.app.state.config.RAG_EMBEDDING_ENGINE == "openai"
+                    else request.app.state.config.RAG_OLLAMA_API_KEY
+                ),
+                request.app.state.config.RAG_EMBEDDING_BATCH_SIZE,
+            )
+            embeddings = embedding_function(
+                list(map(lambda x: x.replace("\n", " "), texts)), user=user
+            )
+            items = [
+                {
+                    "id": str(uuid.uuid4()),
+                    "text": text,
+                    "vector": embeddings[idx],
+                    "metadata": metadatas[idx],
+                }
+                for idx, text in enumerate(texts)
+            ]
 
         VECTOR_DB_CLIENT.insert(
             collection_name=collection_name,

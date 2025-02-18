@@ -1471,7 +1471,9 @@ Ensure that the tools are effectively utilized to achieve the highest-quality an
 # Vector Database
 ####################################
 
-VECTOR_DB = os.environ.get("VECTOR_DB", "chroma")
+# VECTOR_DB = os.environ.get("VECTOR_DB", "chroma")
+VECTOR_DB = os.environ.get("VECTOR_DB", "windvector")
+log.info(f"my_log:[VECTOR_DB_config]:{VECTOR_DB}")
 
 # Chroma
 CHROMA_DATA_PATH = f"{DATA_DIR}/vector_db"
