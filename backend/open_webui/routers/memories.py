@@ -4,6 +4,7 @@ import logging
 from typing import Optional
 
 from open_webui.models.memories import Memories, MemoryModel
+from open_webui.config import VECTOR_DB
 from open_webui.retrieval.vector.connector import VECTOR_DB_CLIENT
 from open_webui.utils.auth import get_verified_user
 from open_webui.env import SRC_LOG_LEVELS
@@ -80,11 +81,18 @@ class QueryMemoryForm(BaseModel):
 async def query_memory(
     request: Request, form_data: QueryMemoryForm, user=Depends(get_verified_user)
 ):
-    results = VECTOR_DB_CLIENT.search(
-        collection_name=f"user-memory-{user.id}",
-        vectors=[request.app.state.EMBEDDING_FUNCTION(form_data.content, user)],
-        limit=form_data.k,
-    )
+    if VECTOR_DB == "windvector":
+        results = VECTOR_DB_CLIENT.search(
+            collection_name=f"user-memory-{user.id}",
+            vectors=[form_data.content],
+            limit=form_data.k,
+        )
+    else:
+        results = VECTOR_DB_CLIENT.search(
+            collection_name=f"user-memory-{user.id}",
+            vectors=[request.app.state.EMBEDDING_FUNCTION(form_data.content, user)],
+            limit=form_data.k,
+        )
 
     return results
 

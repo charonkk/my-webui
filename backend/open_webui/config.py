@@ -595,6 +595,8 @@ if frontend_favicon.exists():
         shutil.copyfile(frontend_favicon, STATIC_DIR / "favicon.png")
     except Exception as e:
         logging.error(f"An error occurred: {e}")
+else:
+    logging.warning(f"Frontend favicon not found at {frontend_favicon}")
 
 frontend_splash = FRONTEND_BUILD_DIR / "static" / "splash.png"
 
@@ -603,6 +605,8 @@ if frontend_splash.exists():
         shutil.copyfile(frontend_splash, STATIC_DIR / "splash.png")
     except Exception as e:
         logging.error(f"An error occurred: {e}")
+else:
+    logging.warning(f"Frontend splash not found at {frontend_splash}")
 
 frontend_loader = FRONTEND_BUILD_DIR / "static" / "loader.js"
 
@@ -1709,6 +1713,72 @@ Provide a clear and direct response to the user's query, including inline citati
 </user_query>
 """
 
+DEFAULT_RAG_TEMPLATE_CN = """### 任务:
+根据提供的上下文回答用户问题，并仅在上下文中**明确提供 <source_id> 标签时**，使用[source_id]格式的内联引用。
+
+### 指南:
+- 如果您不知道答案，请明确说明。
+- 如果不确定，请询问用户进一步澄清。
+- 使用用户查询的语言回答。
+- 如果上下文不可读或质量较差，请告知用户并提供最好的可能答案。
+- 如果上下文中没有答案，但您拥有相关知识，请向用户解释并提供基于您理解的答案。
+- **仅在上下文中明确提供 <source_id> 标签时，才使用 [source_id] 进行内联引用。** 
+- 如果上下文中没有提供 <source_id> 标签，请勿引用。
+- 不要在回答中使用XML标签。
+- 确保引用简洁并直接与提供的信息相关。
+
+### 引用示例:
+如果用户询问一个特定话题，且信息来源于名为"whitepaper.pdf"的文件，并且提供了<source_id>，则回答应包含以下引用：  
+* "根据研究，所提出的方法提高了20%的效率 [whitepaper.pdf]。"
+如果没有提供 <source_id>，则应省略引用。
+
+### 输出:
+提供清晰直接的回答，并仅在上下文中存在 <source_id> 标签时使用[source_id]格式的内联引用。
+
+<context>
+{{CONTEXT}}
+</context>
+
+<user_query>
+{{QUERY}}
+</user_query>
+"""
+
+FORMAT_RAG_TEMPLATE_CN = """### 任务:
+根据提供的上下文回答用户问题，并仅在上下文中**明确提供 <source_id> 标签时**，使用[source_id]格式的内联引用。
+
+### 指南:
+- 如果您不知道答案，请明确说明。
+- 如果不确定，请询问用户进一步澄清。
+- 使用用户查询的语言回答。
+- 如果上下文不可读或质量较差，请告知用户并提供最好的可能答案。
+- 如果上下文中没有答案，但您拥有相关知识，请向用户解释并提供基于您理解的答案。
+- **仅在上下文中明确提供 <source_id> 标签时，才使用 [source_id] 进行内联引用。** 
+- 如果上下文中没有提供 <source_id> 标签，请勿引用。
+- 不要在回答中使用XML标签。
+- 确保引用简洁并直接与提供的信息相关。
+- 数学公式用 $${公式}$$ 格式输出。
+- 图片信息尽量保留，如果有图片内容，用格式为 ![image](\"url\") 的markdown图片信息内容请保留，url中的字符不要替换。
+- 不要生成语言为markdown或plaintext的代码片段
+- 不允许出现升腾，替换为昇腾。
+
+### 引用示例:
+如果用户询问一个特定话题，且信息来源于名为"whitepaper.pdf"的文件，并且提供了<source_id>，则回答应包含以下引用：  
+* "根据研究，所提出的方法提高了20%的效率 [whitepaper.pdf]。"
+如果没有提供 <source_id>，则应省略引用。
+
+### 输出:
+提供清晰直接的回答，并仅在上下文中存在 <source_id> 标签时使用[source_id]格式的内联引用。
+
+<context>
+{{CONTEXT}}
+</context>
+
+<user_query>
+{{QUERY}}
+</user_query>
+"""
+
 RAG_TEMPLATE = PersistentConfig(
     "RAG_TEMPLATE",
     "rag.template",
@@ -1778,7 +1848,8 @@ RAG_WEB_SEARCH_FULL_CONTEXT = PersistentConfig(
 # This ensures the highest level of safety and reliability of the information sources.
 RAG_WEB_SEARCH_DOMAIN_FILTER_LIST = PersistentConfig(
     "RAG_WEB_SEARCH_DOMAIN_FILTER_LIST",
-    "rag.web.search.domain.filter_list",
+    # "rag.web.search.domain.filter_list",
+    "rag.rag.web.search.domain.filter_list",
     [
         # "wikipedia.com",
         # "wikimedia.org",

@@ -44,11 +44,18 @@ class VectorSearchRetriever(BaseRetriever):
         *,
         run_manager: CallbackManagerForRetrieverRun,
     ) -> list[Document]:
-        result = VECTOR_DB_CLIENT.search(
-            collection_name=self.collection_name,
-            vectors=[self.embedding_function(query)],
-            limit=self.top_k,
-        )
+        if VECTOR_DB == "windvector":
+            result = VECTOR_DB_CLIENT.search(
+                collection_name=self.collection_name,
+                vectors=[query],
+                limit=self.top_k,
+            )
+        else:
+            result = VECTOR_DB_CLIENT.search(
+                collection_name=self.collection_name,
+                vectors=[self.embedding_function(query)],
+                limit=self.top_k,
+            )
 
         ids = result.ids[0]
         metadatas = result.metadatas[0]
@@ -188,7 +195,11 @@ def query_collection(
 ) -> dict:
     results = []
     for query in queries:
-        query_embedding = embedding_function(query)
+        if VECTOR_DB == "windvector":
+            query_embedding = query
+        else:
+            query_embedding = embedding_function(query)
+
         for collection_name in collection_names:
             if collection_name:
                 try:
@@ -304,12 +315,7 @@ def get_sources_from_files(
     relevant_contexts = []
 
     for file in files:
-        if file.get("docs"):
-            context = {
-                "documents": [[doc.get("content") for doc in file.get("docs")]],
-                "metadatas": [[doc.get("metadata") for doc in file.get("docs")]],
-            }
-        elif file.get("context") == "full":
+        if file.get("context") == "full":
             context = {
                 "documents": [[file.get("file").get("data", {}).get("content")]],
                 "metadatas": [[{"file_id": file.get("id"), "name": file.get("name")}]],
