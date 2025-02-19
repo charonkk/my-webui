@@ -152,10 +152,19 @@ def merge_and_sort_query_results(
     combined_documents = []
     combined_metadatas = []
 
+    print(f"**my_log**:[query_results]:{query_results}")
     for data in query_results:
-        combined_distances.extend(data["distances"][0])
-        combined_documents.extend(data["documents"][0])
-        combined_metadatas.extend(data["metadatas"][0])
+        print(f"**my_log**:[data_in_util]:{data}")
+        # combined_distances.extend(data["distances"][0])
+        # combined_documents.extend(data["documents"][0])
+        # combined_metadatas.extend(data["metadatas"][0])
+        distances = data.get("distances") or [[]]
+        documents = data.get("documents") or [[]]
+        metadatas = data.get("metadatas") or [[]]
+
+        combined_distances.extend(distances[0])
+        combined_documents.extend(documents[0]) 
+        combined_metadatas.extend(metadatas[0])
 
     # Create a list of tuples (distance, document, metadata)
     combined = list(zip(combined_distances, combined_documents, combined_metadatas))
